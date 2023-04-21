@@ -15,8 +15,8 @@
   "license": "Apache-2.0",
   "authors": [
     {
-      "name": "Mikhail Chemezov",
-      "email": "michlenanosoft@gmail.com"
+      "name": "sitis",
+      "email": "ananinserg@gmail.com"
     }
   ],
   "require-dev": {
@@ -33,7 +33,7 @@
   },
   "autoload": {
     "psr-4": {
-      "sitis\\google-indexer\\": "src/"
+      "sitis\\google\\indexer\\": "src/"
     }
   },
   "config": {
