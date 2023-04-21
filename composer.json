@@ -20,7 +20,16 @@
     }
   ],
   "require-dev": {
-    "yiisoft/yii2": "~2.0.0"
+    "yiisoft/yii2": "~2.0.0",
+    "luyadev/luya-core" : "*",
+    "luyadev/luya-module-admin" : "*",
+    "luyadev/luya-module-cms" : "*",
+    "luyadev/luya-generic" : "*",
+    "luyadev/luya-module-styleguide": "*",
+    "luyadev/luya-module-errorapi": "*",
+    "luyadev/luya-module-basicauth": "*",
+    "luyadev/luya-deployer": "~1.0",
+    "luyadev/luya-module-crawler": "*"
   },
   "autoload": {
     "psr-4": {
