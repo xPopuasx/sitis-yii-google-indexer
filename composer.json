@@ -1,0 +1,35 @@
+{
+  "name": "sitis/google-indexer",
+  "description": "Модуль для принудительной отправки в Google страниц для индексации",
+  "type": "yii2-extension",
+  "keywords": [
+    "yii2",
+    "extension",
+    "luya",
+    "sitis",
+    "menu",
+    "content",
+    "module"
+  ],
+  "minimum-stability": "dev",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Mikhail Chemezov",
+      "email": "michlenanosoft@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "yiisoft/yii2": "~2.0.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "sitis\\google-indexer\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
+    }
+  }
+}

@@ -1,0 +1,31 @@
+# folders and files
+/vendor
+/bin
+/runtime
+/luya
+composer.phar
+.DS_Store
+*.log
+
+# project config
+/configs/env-local-db.php
+/configs/env.php
+
+/resources/node_modules
+
+# SASS & GULP
+/resources/.sass-cache
+/resources/local/
+
+#IDE: netbeans
+/nbproject
+
+#IDE: PHPStorm
+.idea/
+
+#IDE: eclipse
+.buildpath
+.project
+.settings
+
+.env
