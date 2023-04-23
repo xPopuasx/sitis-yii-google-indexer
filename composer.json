@@ -1,0 +1,63 @@
+{
+  "name": "sitis/seo-google-indexer",
+  "description": "Модуль для принудительной отправки в Google страниц для индексации",
+  "type": "yii2-extension",
+  "keywords": [
+    "yii2",
+    "extension",
+    "luya",
+    "sitis",
+    "menu",
+    "content",
+    "module"
+  ],
+  "minimum-stability": "dev",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "sitis",
+      "email": "ananinserg@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "yiisoft/yii2": "~2.0.0",
+    "luyadev/luya-core" : "*",
+    "luyadev/luya-module-admin" : "*",
+    "luyadev/luya-module-cms" : "*",
+    "luyadev/luya-generic" : "*",
+    "luyadev/luya-module-styleguide": "*",
+    "luyadev/luya-module-errorapi": "*",
+    "luyadev/luya-module-basicauth": "*",
+    "luyadev/luya-deployer": "~1.0",
+    "luyadev/luya-module-crawler": "*",
+    "sitis/blocks": "dev-master",
+    "sitis/yii2-uniform": "dev-master",
+    "sitis/yii2-sitis-lead": "dev-master",
+    "sitis/shop": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "sitis\\seo\\google\\indexer\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    },
+    {
+      "type": "composer",
+      "url": "https://repo.sitis.dev"
+    }
+  ],
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "luyadev/luya-composer": true
+    }
+  },
+  "require": {
+    "sitis/blocks": "dev-master",
+    "google/apiclient": "2.12.1"
+  }
+}
