@@ -1,5 +1,5 @@
 {
-  "name": "sitis/google-indexer",
+  "name": "sitis/seo-google-indexer",
   "description": "Модуль для принудительной отправки в Google страниц для индексации",
   "type": "yii2-extension",
   "keywords": [
@@ -29,16 +29,35 @@
     "luyadev/luya-module-errorapi": "*",
     "luyadev/luya-module-basicauth": "*",
     "luyadev/luya-deployer": "~1.0",
-    "luyadev/luya-module-crawler": "*"
+    "luyadev/luya-module-crawler": "*",
+    "sitis/blocks": "dev-master",
+    "sitis/yii2-uniform": "dev-master",
+    "sitis/yii2-sitis-lead": "dev-master",
+    "sitis/shop": "dev-master"
   },
   "autoload": {
     "psr-4": {
-      "sitis\\google\\indexer\\": "src/"
+      "sitis\\seo\\google\\indexer\\": "src/"
     }
   },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    },
+    {
+      "type": "composer",
+      "url": "https://repo.sitis.dev"
+    }
+  ],
   "config": {
     "allow-plugins": {
-      "yiisoft/yii2-composer": true
+      "yiisoft/yii2-composer": true,
+      "luyadev/luya-composer": true
     }
+  },
+  "require": {
+    "sitis/blocks": "dev-master",
+    "google/apiclient": "2.12.1"
   }
 }

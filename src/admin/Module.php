@@ -1,10 +1,6 @@
 <?php
 
-namespace sitis\google\indexer\admin;
-
-use luya\admin\components\AdminMenuBuilder;
-use Yii;
-use yii\helpers\ArrayHelper;
+namespace sitis\seo\google\indexer\admin;
 
 class Module extends \luya\admin\base\Module
 {
