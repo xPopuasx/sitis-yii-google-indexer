@@ -6,10 +6,16 @@ use Google\Exception;
 use luya\console\Command;
 use sitis\seo\google\indexer\admin\services\GoogleService;
 use sitis\seo\google\indexer\admin\services\UrlsService;
+use sitis\seo\google\indexer\admin\std\GoogleIndexerMethodEnum;
+use sitis\seo\google\indexer\admin\std\Item;
+use sitis\seo\google\indexer\models\ngrest\SeoGoogleIndexerLog;
 use sitis\shop\core\entities\Shop\Brand;
 use sitis\shop\core\entities\Shop\Category;
 use sitis\shop\core\entities\Shop\FilterPage;
+use sitis\shop\core\entities\Shop\interfaces\ConstProductStatusInterface;
 use sitis\shop\core\entities\Shop\Product\Product;
+use sitis\shop\core\entities\Shop\Product\queries\ProductQuery;
+use sitis\shop\core\entities\Shop\queries\CategoryQuery;
 use sitis\shop\core\entities\Shop\Tag;
 use sitis\shop\core\readModels\Shop\BrandReadRepository;
 use sitis\shop\core\readModels\Shop\CategoryReadRepository;
@@ -21,6 +27,7 @@ use sitis\shop\core\services\sitemap\MapItem;
 use sitis\shop\core\traits\ShopModuleTrait;
 use yii\base\InvalidConfigException;
 use Yii;
+use yii\db\ActiveQuery;
 
 class GoogleController extends Command
 {
@@ -47,7 +54,8 @@ class GoogleController extends Command
         TagReadRepository $tags,
         UrlsService $urlsService,
         $config = []
-    ){
+    )
+    {
         $this->shopCategories = $shopCategories;
         $this->shopFilterPages = $shopFilterPages;
         $this->products = $products;
@@ -80,7 +88,6 @@ class GoogleController extends Command
 
         foreach ($websites as $website) {
             $entities = $this->getEntities($website);
-
             foreach ($entities as $key => $entity) {
                 if (!isset($entity['query']) || !isset($entity['mapItemCallback'])) {
                     throw new InvalidConfigException('Entity must contain "query", "mapItemCallback" config keys.');
@@ -97,73 +104,140 @@ class GoogleController extends Command
 
                 $updatedUrls = array_merge($updatedUrls, $this->urlsService->getUpdatedUrls($key, $query, $mapItemCallback));
 
-                $entityCounter ++;
+                $entityCounter++;
             }
         }
 
         (new GoogleService(['items' => $updatedUrls]))->request();
 
-        $this->outputInfo('find '. count($updatedUrls). ' items on update from ' . $entityCounter . ' entities');
+        $this->outputInfo('find ' . count($updatedUrls) . ' items on update from ' . $entityCounter . ' entities');
     }
 
     protected function getEntities(?array $website): array
     {
+        $iteration = $this->getIteration();
+        
         return [
             'categories' => [
-                'query' => $this->shopCategories->getByWebsiteId($website['id']),
-                'mapItemCallback' => function (Category $category) {
-                    return new MapItem(
+                'query' => $this->getCategoriesByWebsiteId($website['id'])->exists() ? $this->getCategoriesByWebsiteId($website['id']) : false,
+                'mapItemCallback' => function (Category $category) use ($iteration) {
+                    return new Item(
+                        $category->id,
+                        $category->created_at,
+                        $category->updated_at,
                         $category->getAbsoluteUrl(),
                         max($category->updated_at, $category->products_updated_at),
-                        MapItem::WEEKLY,
-                        0.6
+                        ($category->status == 1 ? GoogleIndexerMethodEnum::URL_UPDATED : GoogleIndexerMethodEnum::URL_DELETED),
+                        Category::class,
+                        'category',
+                        $iteration
                     );
                 },
             ],
             'filter-pages' => [
-                'query' => $this->shopFilterPages->checkExistByWebsiteId($website['id']) ? $this->shopFilterPages->getByWebsiteIdActiveQuery($website['id']) : false,
-                'mapItemCallback' => function (FilterPage $filterPage) {
-                    return new MapItem(
+                'query' => $this->getByWebsiteIdFilterPages($website['id'])->exists() ? $this->getByWebsiteIdFilterPages($website['id']) : false,
+                'mapItemCallback' => function (FilterPage $filterPage) use ($iteration) {
+                    return new Item(
+                        $filterPage->id,
+                        $filterPage->created_at,
+                        $filterPage->updated_at,
                         $filterPage->getAbsoluteUrl(),
                         $filterPage->updated_at,
-                        MapItem::WEEKLY,
-                        0.6
+                        ($filterPage->status == 1 ? GoogleIndexerMethodEnum::URL_UPDATED : GoogleIndexerMethodEnum::URL_DELETED),
+                        FilterPage::class,
+                        'filter-page',
+                        $iteration
                     );
                 },
             ],
             'brands' => [
-                'query' => $this->brands->checkExist() ? $this->brands->getAllActiveQuery() : false,
-                'mapItemCallback' => function (Brand $brand) {
-                    return new MapItem(
+                'query' => $this->getAllBrand()->exists() ? $this->getAllBrand() : false,
+                'mapItemCallback' => function (Brand $brand) use ($iteration) {
+                    return new Item(
+                        $brand->id,
+                        $brand->created_at,
+                        $brand->updated_at,
                         $brand->getAbsoluteUrl(),
                         $brand->updated_at,
-                        MapItem::WEEKLY,
-                        0.6
+                        ($brand->status == 1 ? GoogleIndexerMethodEnum::URL_UPDATED : GoogleIndexerMethodEnum::URL_DELETED),
+                        Brand::class,
+                        'brand',
+                        $iteration
                     );
                 },
             ],
             'tags' => [
-                'query' => $this->tags->getAllActiveQuery()->exists() ? $this->tags->getAllActiveQuery() : false,
-                'mapItemCallback' => function (Tag $tag) {
-                    return new MapItem(
+                'query' => $this->getAllTag()->exists() ? $this->getAllTag() : false,
+                'mapItemCallback' => function (Tag $tag) use ($iteration) {
+                    return new Item(
+                        $tag->id,
+                        $tag->created_at,
+                        $tag->updated_at,
                         $tag->getAbsoluteUrl(),
                         $tag->updated_at,
-                        MapItem::WEEKLY,
-                        0.6
+                        ($tag->is_active == 1 ? GoogleIndexerMethodEnum::URL_UPDATED : GoogleIndexerMethodEnum::URL_DELETED),
+                        Tag::class,
+                        'tag',
+                        $iteration
                     );
                 },
             ],
             'products' => [
-                'query' => $this->products->getAllQuery(),
-                'mapItemCallback' => function (Product $product) {
-                    return new MapItem(
+                'query' => $this->getAllQuery(),
+                'mapItemCallback' => function (Product $product) use ($iteration) {
+                    return new Item(
+                        $product->id,
+                        $product->created_at,
+                        $product->updated_at,
                         $product->getAbsoluteUrl(),
                         $product->updated_at,
-                        MapItem::DAILY,
-                        0.6
+                        (($product->status == 1 && $product->is_not_available == 0) ? GoogleIndexerMethodEnum::URL_UPDATED : GoogleIndexerMethodEnum::URL_DELETED),
+                        Product::class,
+                        'product',
+                        $iteration
                     );
                 },
             ],
         ];
+    }
+
+    private function getAllQuery(): ProductQuery
+    {
+        return Product::find()->alias('p')->orderBy(['id' => SORT_ASC]);
+    }
+
+    private function getAllTag(): ActiveQuery
+    {
+        return Tag::find();
+    }
+
+    private function getAllBrand(): ActiveQuery
+    {
+        return Brand::find()
+            ->alias('b')
+            ->joinWith('products', false)
+            ->andWhere(['is not', 'shop_products.category_id', null])
+            ->groupBy('b.id');
+    }
+
+    public function getCategoriesByWebsiteId(int $websiteId): ?CategoryQuery
+    {
+        return Category::find()->where(['website_id' => $websiteId])->notRoot()->orderBy(['tree' => SORT_ASC, 'lft' => SORT_ASC]);
+    }
+
+    public function getByWebsiteIdFilterPages(int $websiteId): ?ActiveQuery
+    {
+        return FilterPage::find()->where(['website_id' => $websiteId]);
+    }
+
+    private function getIteration(): int
+    {
+        $iterations = SeoGoogleIndexerLog::find()->orderBy(['id' => SORT_DESC]);
+        
+        if($iterations->count() >= \Yii::$app->modules['seogoogleindexeradmin']->seoGoogleIndexerLimit){
+            return $iterations->one()->iteration + 1;
+        }
+
+        return $iterations->one() ? $iterations->one()->iteration : 1;
     }
 }

@@ -4,8 +4,9 @@ namespace sitis\seo\google\indexer\admin\services;
 
 use sitis\seo\google\indexer\admin\Interfaces\UrlsInterface;
 use sitis\seo\google\indexer\admin\std\GoogleIndexerMethodEnum;
+use sitis\seo\google\indexer\models\ngrest\SeoGoogleIndexerLog;
 
-class UrlsService implements UrlsInterface
+class UrlsService
 {
     public function getUpdatedUrls(string $key, $query, callable $callback): array
     {
@@ -17,9 +18,29 @@ class UrlsService implements UrlsInterface
             $modificationQuery = array_map($callback, $query->limit(1000)->offset($chunk * 1000)->all());
 
             foreach ($modificationQuery as $item){
+                // пропускаем то что уже присутствует в логах
+                if($this->getLogByItem($item->class, $item->id, $item->type)){
+                    continue;
+                }
+
+                // если отправляем статус на удаление и при этому у нас нету в логах обновления этого товара, просто пропускаем (так как не можем удалять то что не обновлено)
+                if(!$item->type == GoogleIndexerMethodEnum::URL_DELETED && $this->getLogByItem($item->class, $item->id, GoogleIndexerMethodEnum::URL_UPDATED)) {
+                    continue;
+                }
+
+                if($item->type == GoogleIndexerMethodEnum::URL_DELETED && !$this->getLogByItem($item->class, $item->id, GoogleIndexerMethodEnum::URL_UPDATED)) {
+                    continue;
+                }
+
                 $urls[$chunk][] = [
                     'url' => $item->location,
-                    'type' => GoogleIndexerMethodEnum::URL_UPDATED
+                    'class' => $item->class,
+                    'item_type' => $item->itemType,
+                    'id' => $item->id,
+                    'create_model' => $item->createDate,
+                    'update_model' => $item->updateDate,
+                    'type' => $item->type,
+                    'iteration' => $item->iteration
                 ];
             }
         }
@@ -35,10 +56,8 @@ class UrlsService implements UrlsInterface
         return $output;
     }
 
-    public function getDeletedUrls(string $key, $query, callable $callback): array
-    {
-        /** TODO: тут надо запоминать отправленные items миграция google_index_items (morph_type, morph_id, google_type)*/
-        /** TODO: уточнить, как сверять удлёные, чекать из sitemap или испольовать другой механизм */
+    private function getLogByItem(string $class, int $id, string $type){
+        return SeoGoogleIndexerLog::find()->where(['class' => $class])->andWhere(['class_id' => $id])->andWhere(['type' => $type])->one();
     }
 
     private function getChunksRange(int $count, int $limit = 0): array
